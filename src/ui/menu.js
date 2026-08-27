@@ -1,22 +1,18 @@
+const fs = require('fs');
 const path = require('path');
-const execa = require('execa');
 const prompts = require('prompts');
-const { header, divider, blank, colors } = require('./output');
+const { header, divider, blank, colors, changeBadge } = require('./output');
 const { loadConfig, configExists, getActivePath } = require('../utils/config-file');
+const { getWorktreeChangeCount } = require('../services/worktree');
 const { getLatestVersionFromCache, fetchLatestVersionAsync } = require('../services/update-check');
 const { MENU_CHOICES } = require('../utils/constants');
 
 async function getActiveStatus(rootDir) {
   const activePath = getActivePath(rootDir);
-  if (!activePath) return null;
+  if (!activePath || !fs.existsSync(activePath)) return null;
 
   const name = path.basename(activePath);
-  let badge = '';
-  try {
-    const { stdout } = await execa('git', ['-C', activePath, 'status', '--short'], { reject: false });
-    const count = stdout.trim().split('\n').filter(Boolean).length;
-    badge = count === 0 ? colors.success('[clean]') : colors.warn(`[${count} changes]`);
-  } catch {}
+  const badge = changeBadge(await getWorktreeChangeCount(activePath));
 
   return { name, badge };
 }

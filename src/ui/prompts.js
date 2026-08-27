@@ -1,5 +1,5 @@
 const prompts = require('prompts');
-const { colors } = require('./output');
+const { colors, changeBadge, worktreeBadges } = require('./output');
 
 // 취소 처리를 위한 옵션
 const onCancel = () => {
@@ -132,14 +132,10 @@ async function selectWorktree(worktrees) {
  */
 async function selectWorktrees(worktrees) {
   const choices = worktrees.map(wt => {
-    const badges = [];
-    if (wt.merged) badges.push(colors.success('머지됨'));
-    if (wt.gone) badges.push(colors.dim('원격 없음'));
-    if (wt.dirty) badges.push(colors.error('변경 있음'));
-    if (wt.protectedBranch) badges.push(colors.warn('보호'));
+    const badges = worktreeBadges(wt);
 
     return {
-      title: `${wt.name} ${colors.info(`(${wt.branch})`)}${badges.length ? ` ${badges.join(colors.dim(' · '))}` : ''}`,
+      title: `${wt.name} ${colors.info(`(${wt.branch})`)} ${changeBadge(wt.changes || 0)}${badges ? ` ${badges}` : ''}`,
       value: wt.name,
       selected: Boolean(wt.selected)
     };

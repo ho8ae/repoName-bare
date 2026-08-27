@@ -1,6 +1,8 @@
 const execa = require('execa');
 const path = require('path');
 const fs = require('fs');
+const { getRemoteBranches, isMergedInto } = require('./branch');
+const { isProtectedBranch } = require('../utils/validators');
 
 /**
  * 워크트리 목록 조회
@@ -126,17 +128,54 @@ async function getWorktreeBranch(worktreePath) {
 }
 
 /**
- * 워크트리에 커밋 안 된 변경이 있는지 확인
+ * 워크트리의 커밋 안 된 변경 개수
  * @param {string} worktreePath - 워크트리 경로
- * @returns {Promise<boolean>}
+ * @returns {Promise<number>}
  */
-async function isWorktreeDirty(worktreePath) {
+async function getWorktreeChangeCount(worktreePath) {
   try {
     const { stdout } = await execa('git', ['-C', worktreePath, 'status', '--short'], { reject: false });
-    return stdout.trim().length > 0;
+    return stdout.trim().split('\n').filter(Boolean).length;
   } catch {
-    return false;
+    return 0;
   }
+}
+
+/**
+ * 워크트리 상태 일괄 판정 (list / remove 공용)
+ * - merged: base에 이미 반영됨 (일반/squash 머지)
+ * - gone:   원격 카운터파트 없음 (미push 브랜치일 수도 있으므로 자동 선택은 안 함)
+ * - changes/dirty: 커밋 안 된 변경
+ * - selected: 삭제 화면 기본 체크 대상 (머지됐고 변경 없음)
+ * @param {string} bareDir - bare 저장소 경로
+ * @param {string} rootDir - 프로젝트 루트
+ * @param {Array} worktrees - bare 제외 워크트리 목록
+ * @param {string} baseBranch - 기준 브랜치명
+ * @returns {Promise<Array>}
+ */
+async function inspectWorktrees(bareDir, rootDir, worktrees, baseBranch) {
+  const remote = new Set(await getRemoteBranches(bareDir));
+
+  return Promise.all(worktrees.map(async (wt) => {
+    const protectedBranch = isProtectedBranch(wt.branch);
+
+    const [merged, changes] = await Promise.all([
+      wt.branch && !protectedBranch
+        ? isMergedInto(bareDir, wt.branch, `origin/${baseBranch}`)
+        : false,
+      getWorktreeChangeCount(path.join(rootDir, wt.name))
+    ]);
+
+    return {
+      ...wt,
+      protectedBranch,
+      merged,
+      changes,
+      dirty: changes > 0,
+      gone: Boolean(wt.branch) && !protectedBranch && !remote.has(wt.branch),
+      selected: merged && changes === 0
+    };
+  }));
 }
 
 module.exports = {
@@ -146,5 +185,6 @@ module.exports = {
   createWorktreeWithExistingBranch,
   removeWorktree,
   getWorktreeBranch,
-  isWorktreeDirty
+  getWorktreeChangeCount,
+  inspectWorktrees
 };

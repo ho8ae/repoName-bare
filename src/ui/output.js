@@ -71,6 +71,21 @@ function blank() {
   console.log('');
 }
 
+// 변경 개수 배지
+function changeBadge(count) {
+  if (count === 0) return colors.success('[clean]');
+  return colors.warn(`[${count} change${count === 1 ? '' : 's'}]`);
+}
+
+// 워크트리 상태 배지 (머지됨 / 원격 없음 / 보호)
+function worktreeBadges(wt) {
+  const badges = [];
+  if (wt.merged) badges.push(colors.success('머지됨'));
+  if (wt.gone) badges.push(colors.dim('원격 없음'));
+  if (wt.protectedBranch) badges.push(colors.warn('보호'));
+  return badges.join(colors.dim(' · '));
+}
+
 // 단계 표시
 function step(current, total, message) {
   console.log('');
@@ -86,5 +101,7 @@ module.exports = {
   header,
   divider,
   blank,
-  step
+  step,
+  changeBadge,
+  worktreeBadges
 };

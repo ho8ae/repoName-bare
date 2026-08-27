@@ -70,7 +70,7 @@ grove
 grove create      # 워크트리 생성
 grove cd [이름]   # 워크트리로 이동 (아래 셸 설정 필요)
 grove remove      # 워크트리 삭제 (다중 선택 + 브랜치 동시 삭제)
-grove list        # 목록 보기 (active 마커 + clean/dirty 상태)
+grove list        # 목록 보기 (active 마커 + 상태/머지 배지)
 grove link        # 파일 복사 (FILES 설정 기반)
 grove config      # 설정 초기화
 grove pr-review   # PR 리뷰
@@ -96,6 +96,18 @@ grove cd              # 목록에서 선택
 ```
 
 워크트리 **안**에서 실행해도 프로젝트 루트를 자동으로 찾습니다. 이동한 워크트리는 `active`로 기록되어 메뉴 대시보드에 표시됩니다.
+
+### 목록 보기 (`grove list`)
+
+```
+    ○ alive       [feat/alive]     [clean]
+    ○ mainwt      [main]           [clean]     보호
+    ○ merged      [feat/merged]    [1 change]  머지됨 · 원격 없음
+    ● squashed    [feat/squashed]  [clean]     머지됨 · 원격 없음
+    ○ unpushed    [feat/unpushed]  [clean]     원격 없음
+
+  머지 완료 1개 — grove remove 에서 자동 선택됩니다
+```
 
 ### 워크트리 삭제 (`grove remove`)
 

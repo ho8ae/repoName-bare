@@ -1,20 +1,9 @@
 const path = require('path');
-const execa = require('execa');
-const { box, section, msg, colors, icons, blank } = require('../ui/output');
+const { box, section, msg, colors, icons, blank, changeBadge, worktreeBadges } = require('../ui/output');
 const { withSpinner } = require('../ui/spinner');
-const { getWorktrees } = require('../services/worktree');
+const { getWorktrees, inspectWorktrees } = require('../services/worktree');
 const { fetchOrigin, isBareRepoExists } = require('../services/git');
 const { findRootDir, loadConfig, getBareDir, getActivePath } = require('../utils/config-file');
-
-async function getWorktreeStatus(worktreePath) {
-  try {
-    const { stdout } = await execa('git', ['-C', worktreePath, 'status', '--short'], { reject: false });
-    const count = stdout.trim().split('\n').filter(Boolean).length;
-    return count === 0 ? colors.success('[clean]') : colors.warn(`[${count} changes]`);
-  } catch {
-    return '';
-  }
-}
 
 async function list() {
   const rootDir = findRootDir();
@@ -32,23 +21,30 @@ async function list() {
   section('워크트리');
   const worktrees = await getWorktrees(bareDir);
   const activePath = getActivePath(rootDir);
+  const config = loadConfig(rootDir);
 
-  for (const wt of worktrees) {
-    if (wt.isBare) {
-      console.log(`    ${colors.dim(wt.path)} ${colors.dim('(bare)')}`);
-      continue;
-    }
+  const items = await withSpinner('상태 확인 중...', () =>
+    inspectWorktrees(bareDir, rootDir, worktrees.filter(wt => !wt.isBare), config.DEFAULT_BASE_BRANCH)
+  );
 
-    const isActive = activePath && path.resolve(wt.path) === path.resolve(activePath);
-    const activeMarker = isActive ? colors.success('●') : colors.dim('○');
-    const statusBadge = await getWorktreeStatus(wt.path);
-    const branchLabel = wt.branch ? colors.info(`[${wt.branch}]`) : '';
-    const name = path.basename(wt.path);
-
-    console.log(`    ${activeMarker} ${colors.bold(name.padEnd(20))} ${branchLabel} ${statusBadge}`);
+  for (const wt of worktrees.filter(w => w.isBare)) {
+    console.log(`    ${colors.dim(wt.path)} ${colors.dim('(bare)')}`);
   }
 
-  const config = loadConfig(rootDir);
+  for (const wt of items) {
+    const isActive = activePath && path.resolve(wt.path) === path.resolve(activePath);
+    const activeMarker = isActive ? colors.success('●') : colors.dim('○');
+    const branchLabel = wt.branch ? colors.info(`[${wt.branch}]`) : '';
+    const badges = worktreeBadges(wt);
+
+    console.log(`    ${activeMarker} ${colors.bold(wt.name.padEnd(20))} ${branchLabel} ${changeBadge(wt.changes)}${badges ? `  ${badges}` : ''}`);
+  }
+
+  const autoCount = items.filter(i => i.selected).length;
+  if (autoCount > 0) {
+    blank();
+    console.log(`  ${colors.dim(`머지 완료 ${autoCount}개 — grove remove 에서 자동 선택됩니다`)}`);
+  }
 
   if (config.FILES && config.FILES.length > 0) {
     section('파일 복사 설정');
