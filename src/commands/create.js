@@ -9,7 +9,7 @@ const { getBranches } = require('../services/branch');
 const { createWorktreeWithNewBranch, createWorktreeWithExistingBranch } = require('../services/worktree');
 const { copyFilesToWorktree } = require('../services/symlink');
 const { fetchOrigin, isBareRepoExists } = require('../services/git');
-const { loadConfig, getBareDir, getActivePath, setActivePath } = require('../utils/config-file');
+const { findRootDir, loadConfig, getBareDir, getActivePath, setActivePath } = require('../utils/config-file');
 const { validateFolderName } = require('../utils/validators');
 const { folderExists } = require('../utils/validators');
 
@@ -17,7 +17,7 @@ const { folderExists } = require('../utils/validators');
  * 워크트리 생성 명령어
  */
 async function create() {
-  const rootDir = process.cwd();
+  const rootDir = findRootDir();
   const bareDir = getBareDir(rootDir);
   const config = loadConfig(rootDir);
 

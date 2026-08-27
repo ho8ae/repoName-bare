@@ -143,6 +143,26 @@ ${postStr}
 }
 
 /**
+ * 프로젝트 루트 탐색 (워크트리 안에서 실행해도 동작하도록 상위로 거슬러 올라감)
+ * @param {string} startDir - 탐색 시작 디렉토리
+ * @returns {string} - 루트 경로 (못 찾으면 startDir 그대로)
+ */
+function findRootDir(startDir = process.cwd()) {
+  let dir = path.resolve(startDir);
+
+  for (;;) {
+    if (fs.existsSync(path.join(dir, DEFAULTS.BARE_DIR)) ||
+        fs.existsSync(path.join(dir, DEFAULTS.CONFIG_FILE))) {
+      return dir;
+    }
+
+    const parent = path.dirname(dir);
+    if (parent === dir) return startDir;
+    dir = parent;
+  }
+}
+
+/**
  * Bare 디렉토리 경로 반환
  * @param {string} rootDir - 루트 디렉토리
  * @returns {string}
@@ -184,6 +204,7 @@ module.exports = {
   configExists,
   loadConfig,
   saveConfig,
+  findRootDir,
   getBareDir,
   getActivePath,
   setActivePath

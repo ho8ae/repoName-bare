@@ -72,6 +72,34 @@ async function branchExists(bareDir, branchName) {
 }
 
 /**
+ * 브랜치 내용이 base에 이미 반영됐는지 확인 (일반 머지 + squash 머지)
+ * @param {string} bareDir - bare 저장소 경로
+ * @param {string} branch - 검사할 브랜치
+ * @param {string} base - 기준 ref (예: origin/main)
+ * @returns {Promise<boolean>}
+ */
+async function isMergedInto(bareDir, branch, base) {
+  const git = (args) => execa('git', ['-C', bareDir, ...args]);
+
+  try {
+    // 일반 머지: 브랜치 tip이 base에서 도달 가능하면 고유 커밋이 0개
+    const { stdout: ahead } = await git(['rev-list', '--count', `${base}..${branch}`]);
+    if (ahead.trim() === '0') return true;
+
+    // squash 머지: 브랜치 전체를 커밋 1개로 압축한 가짜 커밋을 만들어
+    // 같은 패치가 base에 있는지 확인 (git cherry는 이미 반영된 커밋을 '-'로 표시)
+    const { stdout: mergeBase } = await git(['merge-base', base, branch]);
+    const { stdout: tree } = await git(['rev-parse', `${branch}^{tree}`]);
+    const { stdout: squashed } = await git(['commit-tree', tree.trim(), '-p', mergeBase.trim(), '-m', '_']);
+    const { stdout: cherry } = await git(['cherry', base, squashed.trim()]);
+
+    return cherry.trim().startsWith('-');
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 브랜치 삭제
  * @param {string} bareDir - bare 저장소 경로
  * @param {string} branchName - 삭제할 브랜치명
@@ -106,6 +134,7 @@ module.exports = {
   getLocalBranches,
   getRemoteBranches,
   branchExists,
+  isMergedInto,
   deleteBranch,
   fetchPRBranch
 };

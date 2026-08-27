@@ -4,7 +4,7 @@ const { box, section, msg, colors, icons, blank } = require('../ui/output');
 const { withSpinner } = require('../ui/spinner');
 const { getWorktrees } = require('../services/worktree');
 const { fetchOrigin, isBareRepoExists } = require('../services/git');
-const { loadConfig, getBareDir, getActivePath } = require('../utils/config-file');
+const { findRootDir, loadConfig, getBareDir, getActivePath } = require('../utils/config-file');
 
 async function getWorktreeStatus(worktreePath) {
   try {
@@ -17,7 +17,7 @@ async function getWorktreeStatus(worktreePath) {
 }
 
 async function list() {
-  const rootDir = process.cwd();
+  const rootDir = findRootDir();
   const bareDir = getBareDir(rootDir);
 
   if (!isBareRepoExists(rootDir)) {

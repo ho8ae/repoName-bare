@@ -3,6 +3,7 @@
 const { program } = require('commander');
 const { init } = require('../src/commands/init');
 const { main, runCommand } = require('../src/index');
+const { shellInit } = require('../src/commands/cd');
 const packageJson = require('../package.json');
 
 program
@@ -57,6 +58,18 @@ program
   .command('pr-review')
   .description('PR 리뷰를 위한 워크트리 생성')
   .action(() => runCommand('pr-review'));
+
+// cd: 워크트리 경로 출력 (셸 함수용)
+program
+  .command('cd [name]')
+  .description('워크트리로 이동 (grove shell-init 필요)')
+  .action((name) => runCommand('cd', name));
+
+// shell-init: 셸 함수 출력
+program
+  .command('shell-init')
+  .description('grove cd용 셸 함수 출력 — eval "$(grove shell-init)"')
+  .action(shellInit);
 
 // help: 도움말
 program

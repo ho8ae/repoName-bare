@@ -6,16 +6,23 @@ async function help() {
   section('커맨드');
   const commands = [
     ['create',    '새 워크트리 생성 (브랜치 선택/생성 포함)'],
+    ['cd [name]', '워크트리로 이동 (shell-init 필요)'],
     ['remove',    '워크트리 삭제'],
     ['list',      '워크트리 목록 + 현재 상태'],
     ['link',      '설정된 파일 복사 (FILES)'],
     ['config',    '.worktree.config 초기화'],
     ['pr-review', 'PR 리뷰용 임시 워크트리 생성'],
     ['help',      '이 도움말 표시'],
+    ['shell-init','grove cd용 셸 함수 출력'],
   ];
   for (const [cmd, desc] of commands) {
     console.log(`    ${colors.info(cmd.padEnd(12))} ${colors.dim(desc)}`);
   }
+
+  section('grove cd 설치');
+  console.log(`  ${colors.dim('~/.zshrc 에 추가하면 grove cd <이름>으로 워크트리 이동:')}`);
+  blank();
+  console.log(`    ${colors.info('eval "$(grove shell-init)"')}`);
 
   section('.worktree.config 설정 가이드');
   console.log(`  ${colors.dim('파일 위치: 프로젝트 루트/.worktree.config')}`);

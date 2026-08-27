@@ -7,7 +7,7 @@ const { fetchOrigin, isBareRepoExists } = require('../services/git');
 const { fetchPRBranch } = require('../services/branch');
 const { createWorktreeWithExistingBranch } = require('../services/worktree');
 const { copyFilesToWorktree } = require('../services/symlink');
-const { loadConfig, getBareDir } = require('../utils/config-file');
+const { findRootDir, loadConfig, getBareDir } = require('../utils/config-file');
 const { folderExists } = require('../utils/validators');
 const { prReviewSubMenu } = require('../ui/menu');
 
@@ -71,7 +71,7 @@ async function showPRDetails(bareDir, prNumber) {
  * @param {string} stateLabel - 상태 라벨
  */
 async function prListByState(state, stateLabel) {
-  const rootDir = process.cwd();
+  const rootDir = findRootDir();
   const bareDir = getBareDir(rootDir);
   const config = loadConfig(rootDir);
 
@@ -163,7 +163,7 @@ async function prListByState(state, stateLabel) {
  * PR 리뷰 명령어
  */
 async function prReview() {
-  const rootDir = process.cwd();
+  const rootDir = findRootDir();
   const bareDir = getBareDir(rootDir);
 
   // gh CLI 확인

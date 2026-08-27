@@ -2,8 +2,6 @@
 
 Git bare repository 기반 워크트리 관리 CLI 도구
 
-> ⚠️ **Beta**: 현재 beta 버전입니다.
-
 ## 소개
 
 `grove`는 Git bare repository를 사용하여 여러 브랜치를 동시에 작업할 수 있게 해주는 CLI 도구입니다.
@@ -25,7 +23,7 @@ bare repository + worktree 방식을 사용하면:
 ## 설치
 
 ```bash
-npm install -g @rawvv/grove@beta
+npm install -g @rawvv/grove
 ```
 
 ## 사용법
@@ -47,7 +45,7 @@ grove
 
 ```
   ╭─────────────────────────────╮
-  │  🌳 GROVE      v0.2.1-beta  │
+  │  🌳 GROVE           v0.3.0  │
   ╰─────────────────────────────╯
 
   ● active  feat/my-feature [clean]
@@ -70,13 +68,43 @@ grove
 
 ```bash
 grove create      # 워크트리 생성
-grove remove      # 워크트리 삭제
+grove cd [이름]   # 워크트리로 이동 (아래 셸 설정 필요)
+grove remove      # 워크트리 삭제 (다중 선택 + 브랜치 동시 삭제)
 grove list        # 목록 보기 (active 마커 + clean/dirty 상태)
 grove link        # 파일 복사 (FILES 설정 기반)
 grove config      # 설정 초기화
 grove pr-review   # PR 리뷰
 grove help        # 커맨드 목록 및 설정 가이드
+grove shell-init  # grove cd용 셸 함수 출력
 ```
+
+### 워크트리 이동 (`grove cd`)
+
+셸의 작업 디렉토리는 자식 프로세스가 바꿀 수 없으므로, 셸 함수를 한 번 등록해야 합니다.
+
+`~/.zshrc` (또는 `~/.bashrc`)에 추가:
+
+```bash
+eval "$(grove shell-init)"
+```
+
+이후:
+
+```bash
+grove cd feat-login   # 이름 또는 브랜치명 부분 일치
+grove cd              # 목록에서 선택
+```
+
+워크트리 **안**에서 실행해도 프로젝트 루트를 자동으로 찾습니다. 이동한 워크트리는 `active`로 기록되어 메뉴 대시보드에 표시됩니다.
+
+### 워크트리 삭제 (`grove remove`)
+
+체크박스로 여러 개를 한 번에 삭제합니다. (`Space` 선택 / `a` 전체 / `Enter` 확정)
+
+- **머지 완료 워크트리는 자동 선택됩니다.** 일반 머지뿐 아니라 **squash 머지**도 감지합니다.
+- 워크트리를 지우면 **로컬 브랜치도 함께** 삭제됩니다 (별도 확인 없음).
+- 자동 선택에서 제외되는 경우 — 커밋 안 된 변경이 있거나(`변경 있음`), 아직 push되지 않은 브랜치(`원격 없음`)이거나, 보호 브랜치(`보호`)일 때. 배지로 표시되며 수동 선택은 가능합니다.
+- 보호 브랜치(`main` `master` `dev` `develop` `staging` `production`)는 워크트리만 지우고 브랜치는 유지합니다.
 
 ## 주요 기능
 
@@ -86,7 +114,8 @@ grove help        # 커맨드 목록 및 설정 가이드
 | **파일 복사** | `.env` 등 공통 파일을 워크트리에 복사 (docker bind mount 호환) |
 | **훅 시스템** | 워크트리 생성 전후 커스텀 명령 자동 실행 (docker-compose 등) |
 | **active 추적** | 현재 작업 중인 워크트리를 메뉴에서 바로 확인 |
-| **워크트리 삭제** | 안전한 삭제 (보호 브랜치 자동 보호) |
+| **워크트리 이동** | `grove cd`로 워크트리 간 이동 (이름/브랜치 부분 일치) |
+| **워크트리 삭제** | 다중 선택 + 로컬 브랜치 동시 삭제, 머지 완료 항목 자동 선택 |
 | **PR 리뷰** | GitHub PR을 워크트리로 체크아웃 (`gh` CLI 필요) |
 | **새 버전 알림** | 업데이트 출시 시 메뉴에서 알림 표시 |
 

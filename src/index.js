@@ -1,6 +1,7 @@
 const { mainMenu } = require('./ui/menu');
 const { msg, blank, colors } = require('./ui/output');
 const { pressEnterToContinue } = require('./ui/prompts');
+const { findRootDir } = require('./utils/config-file');
 
 const { create } = require('./commands/create');
 const { remove } = require('./commands/remove');
@@ -9,14 +10,19 @@ const { link } = require('./commands/link');
 const { config } = require('./commands/config');
 const { prReview } = require('./commands/pr-review');
 const { help } = require('./commands/help');
+const { cd } = require('./commands/cd');
 
 /**
  * 명령어 실행
  * @param {string} command - 명령어
+ * @param {*} [arg] - 명령어 인자
  */
-async function executeCommand(command) {
+async function executeCommand(command, arg) {
   try {
     switch (command) {
+      case 'cd':
+        await cd(arg);
+        break;
       case 'create':
         await create();
         break;
@@ -58,7 +64,7 @@ async function executeCommand(command) {
  */
 async function main() {
   while (true) {
-    const choice = await mainMenu();
+    const choice = await mainMenu(findRootDir());
 
     if (choice === 'quit') {
       console.log(`\n  👋 ${colors.dim('Bye!')}\n`);
@@ -77,9 +83,10 @@ async function main() {
 /**
  * 단일 명령어 실행 (CLI 서브커맨드용)
  * @param {string} command - 명령어
+ * @param {*} [arg] - 명령어 인자
  */
-async function runCommand(command) {
-  await executeCommand(command);
+async function runCommand(command, arg) {
+  await executeCommand(command, arg);
 }
 
 module.exports = { main, runCommand };

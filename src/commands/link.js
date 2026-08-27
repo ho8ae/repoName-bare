@@ -4,14 +4,14 @@ const { progressBar } = require('../ui/spinner');
 const { getWorktreesExcludeBare } = require('../services/worktree');
 const { copyFilesToWorktree } = require('../services/symlink');
 const { isBareRepoExists } = require('../services/git');
-const { loadConfig, getBareDir } = require('../utils/config-file');
+const { findRootDir, loadConfig, getBareDir } = require('../utils/config-file');
 
 /**
  * 파일 연결 (symlink) 명령어
  * @param {string} targetFolder - 대상 폴더 (선택적)
  */
 async function link(targetFolder = null) {
-  const rootDir = process.cwd();
+  const rootDir = findRootDir();
   const bareDir = getBareDir(rootDir);
   const config = loadConfig(rootDir);
 

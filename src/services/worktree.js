@@ -125,11 +125,26 @@ async function getWorktreeBranch(worktreePath) {
   }
 }
 
+/**
+ * 워크트리에 커밋 안 된 변경이 있는지 확인
+ * @param {string} worktreePath - 워크트리 경로
+ * @returns {Promise<boolean>}
+ */
+async function isWorktreeDirty(worktreePath) {
+  try {
+    const { stdout } = await execa('git', ['-C', worktreePath, 'status', '--short'], { reject: false });
+    return stdout.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
 module.exports = {
   getWorktrees,
   getWorktreesExcludeBare,
   createWorktreeWithNewBranch,
   createWorktreeWithExistingBranch,
   removeWorktree,
-  getWorktreeBranch
+  getWorktreeBranch,
+  isWorktreeDirty
 };

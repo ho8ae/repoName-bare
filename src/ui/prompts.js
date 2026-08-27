@@ -131,10 +131,19 @@ async function selectWorktree(worktrees) {
  * @returns {Promise<string[]|null>}
  */
 async function selectWorktrees(worktrees) {
-  const choices = worktrees.map(wt => ({
-    title: `${wt.name} ${colors.info(`(${wt.branch})`)}`,
-    value: wt.name
-  }));
+  const choices = worktrees.map(wt => {
+    const badges = [];
+    if (wt.merged) badges.push(colors.success('머지됨'));
+    if (wt.gone) badges.push(colors.dim('원격 없음'));
+    if (wt.dirty) badges.push(colors.error('변경 있음'));
+    if (wt.protectedBranch) badges.push(colors.warn('보호'));
+
+    return {
+      title: `${wt.name} ${colors.info(`(${wt.branch})`)}${badges.length ? ` ${badges.join(colors.dim(' · '))}` : ''}`,
+      value: wt.name,
+      selected: Boolean(wt.selected)
+    };
+  });
 
   const response = await prompts({
     type: 'multiselect',

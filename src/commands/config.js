@@ -1,6 +1,6 @@
 const { box, section, msg, colors, icons, blank } = require('../ui/output');
 const { inputText, confirm } = require('../ui/prompts');
-const { loadConfig, saveConfig, configExists } = require('../utils/config-file');
+const { findRootDir, loadConfig, saveConfig, configExists } = require('../utils/config-file');
 const { validateSymlinkMapping } = require('../utils/validators');
 const { DEFAULTS } = require('../utils/constants');
 
@@ -8,7 +8,7 @@ const { DEFAULTS } = require('../utils/constants');
  * 설정 초기화 명령어
  */
 async function config() {
-  const rootDir = process.cwd();
+  const rootDir = findRootDir();
 
   box(`${icons.gear} 설정 초기화`);
 
