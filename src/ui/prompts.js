@@ -126,6 +126,29 @@ async function selectWorktree(worktrees) {
 }
 
 /**
+ * 워크트리 다중 선택 (체크박스)
+ * @param {Array<{name: string, branch: string}>} worktrees - 워크트리 목록
+ * @returns {Promise<string[]|null>}
+ */
+async function selectWorktrees(worktrees) {
+  const choices = worktrees.map(wt => ({
+    title: `${wt.name} ${colors.info(`(${wt.branch})`)}`,
+    value: wt.name
+  }));
+
+  const response = await prompts({
+    type: 'multiselect',
+    name: 'value',
+    message: '워크트리 선택',
+    choices,
+    instructions: false,
+    hint: '↑ ↓ 이동, Space 선택, a 전체, Enter 확정'
+  }, { onCancel });
+
+  return Array.isArray(response.value) ? response.value : null;
+}
+
+/**
  * 계속 진행 여부 확인 (Enter to continue)
  * @returns {Promise<void>}
  */
@@ -144,5 +167,6 @@ module.exports = {
   select,
   selectBranch,
   selectWorktree,
+  selectWorktrees,
   pressEnterToContinue
 };

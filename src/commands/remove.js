@@ -1,6 +1,6 @@
 const path = require('path');
 const { box, section, msg, colors, icons, blank } = require('../ui/output');
-const { selectWorktree, confirm } = require('../ui/prompts');
+const { selectWorktrees, confirm } = require('../ui/prompts');
 const { withSpinner } = require('../ui/spinner');
 const { getWorktreesExcludeBare, removeWorktree, getWorktreeBranch } = require('../services/worktree');
 const { deleteBranch } = require('../services/branch');
@@ -9,7 +9,7 @@ const { getBareDir } = require('../utils/config-file');
 const { isProtectedBranch } = require('../utils/validators');
 
 /**
- * 워크트리 삭제 명령어
+ * 워크트리 삭제 명령어 (다중 선택, 로컬 브랜치 동시 삭제)
  */
 async function remove() {
   const rootDir = process.cwd();
@@ -34,24 +34,33 @@ async function remove() {
     return;
   }
 
-  // 워크트리 선택
+  // 워크트리 다중 선택
   section('워크트리 선택');
-  const folder = await selectWorktree(worktrees);
+  const folders = await selectWorktrees(worktrees);
 
-  if (!folder) {
+  if (!folders || folders.length === 0) {
     msg.warn('취소됨');
     return;
   }
 
-  // 선택한 워크트리의 브랜치 확인
-  const worktreePath = path.join(rootDir, folder);
-  const branch = await getWorktreeBranch(worktreePath);
+  // 선택한 워크트리별 브랜치 확인
+  const targets = [];
+  for (const folder of folders) {
+    const branch = await getWorktreeBranch(path.join(rootDir, folder));
+    targets.push({ folder, branch, withBranch: Boolean(branch) && !isProtectedBranch(branch) });
+  }
 
   // 삭제 확인
   blank();
-  console.log(`  ${colors.error(colors.bold('정말 삭제할까요?'))}`);
-  console.log(`    ${icons.folder} ${folder}`);
-  console.log(`    ${icons.branch} ${branch}`);
+  console.log(`  ${colors.error(colors.bold(`정말 삭제할까요? (${targets.length}개)`))}`);
+  targets.forEach(({ folder, branch, withBranch }) => {
+    const branchLabel = !branch
+      ? colors.dim('(브랜치 없음)')
+      : withBranch
+        ? `${icons.branch} ${branch} ${colors.dim('+ 로컬 브랜치 삭제')}`
+        : `${icons.branch} ${branch} ${colors.warn('보호 브랜치 → 유지')}`;
+    console.log(`    ${icons.folder} ${folder}  ${branchLabel}`);
+  });
 
   blank();
   const proceed = await confirm(colors.error('삭제 진행?'), false);
@@ -61,33 +70,33 @@ async function remove() {
     return;
   }
 
-  // 워크트리 삭제
+  // 순차 삭제
   blank();
-  const result = await withSpinner('워크트리 삭제 중...', () =>
-    removeWorktree(bareDir, folder)
-  );
+  let failed = 0;
+  for (const { folder, branch, withBranch } of targets) {
+    const result = await withSpinner(`${folder} 삭제 중...`, () => removeWorktree(bareDir, folder));
 
-  if (!result.success) {
-    msg.err('삭제 실패');
-    return;
-  }
+    if (!result.success) {
+      msg.err(`${folder} 삭제 실패`);
+      failed++;
+      continue;
+    }
 
-  msg.ok('워크트리 삭제 완료');
+    if (!withBranch) {
+      msg.ok(`${folder} 삭제 완료`);
+      continue;
+    }
 
-  // 보호 브랜치가 아닌 경우 브랜치 삭제 여부 확인
-  if (branch && !isProtectedBranch(branch)) {
-    blank();
-    const deleteBranchConfirm = await confirm(`브랜치 '${branch}'도 삭제?`, false);
-
-    if (deleteBranchConfirm) {
-      const branchResult = await deleteBranch(bareDir, branch);
-      if (branchResult.success) {
-        msg.ok('브랜치 삭제 완료');
-      } else {
-        msg.err('브랜치 삭제 실패');
-      }
+    const branchResult = await deleteBranch(bareDir, branch);
+    if (branchResult.success) {
+      msg.ok(`${folder} 삭제 완료 ${colors.dim(`(브랜치 ${branch} 삭제)`)}`);
+    } else {
+      msg.ok(`${folder} 삭제 완료 ${colors.warn(`(브랜치 ${branch} 삭제 실패)`)}`);
     }
   }
+
+  blank();
+  msg.info(`${targets.length - failed}/${targets.length} 처리 완료`);
 }
 
 module.exports = { remove };
